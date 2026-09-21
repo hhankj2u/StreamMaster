@@ -9,10 +9,9 @@ ARG NODE_VERSION=24.x
 RUN rm -f /etc/apt/apt.conf.d/docker-clean; \
     echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache
 
-# APT update, upgrade, and install Node.js
+# APT update and install Node.js (no apt-get upgrade — keeps layers cacheable/reproducible)
 RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/cache/apt \
     apt-get update -yq \
-    && apt-get upgrade -yq \
     && curl -fsSL https://deb.nodesource.com/setup_$NODE_VERSION | bash - \
     && apt-get install --no-install-recommends -yq nodejs libfuse3-dev build-essential pkg-config \
     && apt-get clean \

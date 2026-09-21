@@ -24,6 +24,10 @@ on:
       release_as_latest:
         type: boolean
         default: false
+      platforms:
+        description: "Comma-separated target platforms (PRs: linux/amd64; release: linux/amd64,linux/arm64)"
+        type: string
+        default: "linux/amd64"
     secrets:
       token:
         required: true
@@ -45,6 +49,15 @@ jobs:
       version: ${{ steps.gitversion.outputs.semVer }}
       branchName: ${{ steps.gitversion.outputs.branchName }}
       buildMeta: ${{ steps.gitversion.outputs.buildMetaData }}
+      do_base: ${{ steps.flags.outputs.do_base }}
+      do_build: ${{ steps.flags.outputs.do_build }}
+      do_sm: ${{ steps.flags.outputs.do_sm }}
+      do_final: ${{ steps.flags.outputs.do_final }}
+      base_tag: ${{ steps.flags.outputs.base_tag }}
+      build_tag: ${{ steps.flags.outputs.build_tag }}
+      sm_tag: ${{ steps.flags.outputs.sm_tag }}
+      platforms: ${{ steps.flags.outputs.platforms }}
+      push_floating: ${{ steps.flags.outputs.push_floating }}
 
     steps:
       - uses: actions/checkout@v7
@@ -64,6 +77,94 @@ jobs:
         id: gitversion
         uses: gittools/actions/gitversion/execute@v4.7.0
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.IMAGE_OWNER }}
+          password: ${{ secrets.token }}
+
+      - name: Resolve build flags and image tags
+        id: flags
+        run: |
+          set -euo pipefail
+          DO_BASE=false
+          DO_BUILD=false
+          DO_SM=false
+          DO_FINAL=true
+
+          if [[ "${{ inputs.build_all }}" == "true" ]]; then
+            DO_BASE=true
+            DO_BUILD=true
+            DO_SM=true
+          else
+            [[ "${{ inputs.build_base }}" == "true" ]] && DO_BASE=true
+            [[ "${{ inputs.build_build }}" == "true" ]] && DO_BUILD=true
+            [[ "${{ inputs.build_sm }}" == "true" ]] && DO_SM=true
+          fi
+
+          if [[ "${{ inputs.skip_release_main_build }}" == "true" ]]; then
+            DO_FINAL=false
+          else
+            # Final image always needs an SM layer for this version
+            DO_SM=true
+          fi
+
+          image_exists() {
+            docker buildx imagetools inspect "$1" >/dev/null 2>&1
+          }
+
+          # Reuse floating :base / :build when present; otherwise build them this run
+          if [[ "$DO_BASE" != "true" ]]; then
+            if image_exists "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:base"; then
+              BASE_TAG="base"
+            else
+              echo "Floating :base missing — building base this run"
+              DO_BASE=true
+              BASE_TAG="${{ inputs.version }}-base"
+            fi
+          else
+            BASE_TAG="${{ inputs.version }}-base"
+          fi
+
+          if [[ "$DO_BUILD" != "true" ]]; then
+            if image_exists "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:build"; then
+              BUILD_TAG="build"
+            else
+              echo "Floating :build missing — building build-sdk this run"
+              DO_BUILD=true
+              BUILD_TAG="${{ inputs.version }}-build"
+            fi
+          else
+            BUILD_TAG="${{ inputs.version }}-build"
+          fi
+
+          SM_TAG="${{ inputs.version }}-sm"
+          PLATFORMS="${{ inputs.platforms }}"
+
+          # Only multi-arch builds may refresh floating :base / :build tags
+          PUSH_FLOATING=false
+          if [[ "$PLATFORMS" == *"arm64"* ]]; then
+            PUSH_FLOATING=true
+          fi
+
+          {
+            echo "do_base=$DO_BASE"
+            echo "do_build=$DO_BUILD"
+            echo "do_sm=$DO_SM"
+            echo "do_final=$DO_FINAL"
+            echo "base_tag=$BASE_TAG"
+            echo "build_tag=$BUILD_TAG"
+            echo "sm_tag=$SM_TAG"
+            echo "platforms=$PLATFORMS"
+            echo "push_floating=$PUSH_FLOATING"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Resolved: base=$DO_BASE ($BASE_TAG) build=$DO_BUILD ($BUILD_TAG) sm=$DO_SM final=$DO_FINAL platforms=$PLATFORMS floating=$PUSH_FLOATING"
+
   test:
     needs: [setup]
     runs-on: ubuntu-24.04
@@ -72,34 +173,40 @@ jobs:
         with:
           ref: ${{ github.ref }}
           token: ${{ secrets.token }}
-          fetch-depth: 0
+          fetch-depth: 1
           clean: true
-          fetch-tags: true
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
       - name: Run Tests
-        run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            -f Dockerfile.tests \
-            --progress=plain \
-            --no-cache \
-            .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.tests
+          platforms: linux/amd64
+          push: false
+          load: true
+          cache-from: type=gha,scope=tests
+          cache-to: type=gha,mode=max,scope=tests
+          provenance: false
 
-  build:
-    needs: [setup, test]
+  build-base:
+    needs: [setup]
+    if: needs.setup.outputs.do_base == 'true'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
           token: ${{ secrets.token }}
-          fetch-depth: 0
+          fetch-depth: 1
           clean: true
-          fetch-tags: true
-          
+
+      - name: Set up QEMU
+        if: contains(needs.setup.outputs.platforms, 'arm64')
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
@@ -111,40 +218,181 @@ jobs:
           password: ${{ secrets.token }}
 
       - name: Base - Build and Push
-        if: ${{ inputs.build_base || inputs.build_all }}
-        run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-base -f Dockerfile.base --push .
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.base
+          platforms: ${{ needs.setup.outputs.platforms }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.base_tag }}
+          cache-from: type=gha,scope=base
+          cache-to: type=gha,mode=max,scope=base
+          provenance: false
 
-      - name: Build - Build and Push
-        if: ${{ inputs.build_build || inputs.build_all }}
+      - name: Retag floating :base (multi-arch only)
+        if: needs.setup.outputs.push_floating == 'true'
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-build -f Dockerfile.build --push .
+          docker buildx imagetools create \
+            -t "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:base" \
+            "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.base_tag }}"
+
+  build-build:
+    needs: [setup]
+    if: needs.setup.outputs.do_build == 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.token }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up QEMU
+        if: contains(needs.setup.outputs.platforms, 'arm64')
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.IMAGE_OWNER }}
+          password: ${{ secrets.token }}
+
+      - name: Build SDK - Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.build
+          platforms: ${{ needs.setup.outputs.platforms }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.build_tag }}
+          cache-from: type=gha,scope=build-sdk
+          cache-to: type=gha,mode=max,scope=build-sdk
+          provenance: false
+
+      - name: Retag floating :build (multi-arch only)
+        if: needs.setup.outputs.push_floating == 'true'
+        run: |
+          docker buildx imagetools create \
+            -t "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:build" \
+            "${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.build_tag }}"
+
+  build-sm:
+    needs: [setup, build-build]
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      needs.setup.outputs.do_sm == 'true' &&
+      (needs.build-build.result == 'success' || needs.build-build.result == 'skipped')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.token }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up QEMU
+        if: contains(needs.setup.outputs.platforms, 'arm64')
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.IMAGE_OWNER }}
+          password: ${{ secrets.token }}
+
+      - name: Compose Dockerfile.sm
+        run: |
+          set -euo pipefail
+          echo "FROM --platform=\$BUILDPLATFORM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.build_tag }} AS build" > Dockerfile.sm
+          cat Dockerfile.sm.template >> Dockerfile.sm
 
       - name: SM - Build and Push
-        if: ${{ inputs.build_sm || inputs.build_all }}
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.sm
+          platforms: ${{ needs.setup.outputs.platforms }}
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.sm_tag }}
+          cache-from: type=gha,scope=sm
+          cache-to: type=gha,mode=max,scope=sm
+          provenance: false
+
+  build-final:
+    needs: [setup, test, build-base, build-sm]
+    if: |
+      always() &&
+      needs.setup.result == 'success' &&
+      needs.test.result == 'success' &&
+      needs.setup.outputs.do_final == 'true' &&
+      needs.build-sm.result == 'success' &&
+      (needs.build-base.result == 'success' || needs.build-base.result == 'skipped')
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref }}
+          token: ${{ secrets.token }}
+          fetch-depth: 1
+          clean: true
+
+      - name: Set up QEMU
+        if: contains(needs.setup.outputs.platforms, 'arm64')
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ env.IMAGE_OWNER }}
+          password: ${{ secrets.token }}
+
+      - name: Compose final Dockerfile and tags
+        id: meta
         run: |
-          set -e
-          echo "FROM --platform=\$BUILDPLATFORM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-build AS build" > Dockerfile.sm
-          cat Dockerfile.sm.template >> Dockerfile.sm
-          docker buildx build --platform linux/amd64,linux/arm64 -t ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-sm -f Dockerfile.sm --push .
+          set -euo pipefail
+          {
+            echo "FROM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.sm_tag }} AS sm"
+            echo "FROM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ needs.setup.outputs.base_tag }} AS base"
+            cat Dockerfile.template
+          } > Dockerfile
 
-      - name: Final - Build and Push
-        if: ${{ !inputs.skip_release_main_build }}
-        run: |
-          set -e
-          echo "FROM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-sm AS sm" > Dockerfile
-          echo "FROM ${{ env.REGISTRY }}/${{ env.BASE_IMAGE_NAME }}:${{ inputs.version }}-base AS base" >> Dockerfile
-          cat Dockerfile.template >> Dockerfile
-
-          TAGS="-t ${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:${{ inputs.version }}"
-
+          TAGS="${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:${{ inputs.version }}"
           if [[ "${{ inputs.release_as_latest }}" == "true" ]]; then
-            TAGS="$TAGS -t ${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:latest"
+            TAGS="${TAGS}"$'\n'"${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:latest"
           else
-            TAGS="$TAGS -t ${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:$(echo "${{ needs.setup.outputs.branchName }}" | tr '/' '-')"
+            BRANCH_TAG=$(echo "${{ needs.setup.outputs.branchName }}" | tr '/' '-')
+            TAGS="${TAGS}"$'\n'"${{ env.REGISTRY }}/${{ env.FINAL_IMAGE_NAME }}:${BRANCH_TAG}"
           fi
 
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            $TAGS \
-            -f Dockerfile --push .
+          {
+            echo "tags<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
+      - name: Final - Build and Push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ needs.setup.outputs.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          cache-from: type=gha,scope=final
+          cache-to: type=gha,mode=max,scope=final
+          provenance: false

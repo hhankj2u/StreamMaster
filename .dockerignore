@@ -8,6 +8,9 @@
 **/.toolstarget
 **/.vs
 **/.vscode
+**/.devcontainer
+**/.github
+**/.cursor
 **/*.*proj.user
 **/*.dbmdl
 **/*.jfm
@@ -19,8 +22,13 @@
 **/node_modules
 **/npm-debug.log
 **/obj
+**/.nuget
 **/secrets.dev.yaml
 **/values.dev.yaml
 **/.eslintrc.json
+**/StreamMaster.Docs
+**/agent-transcripts
 LICENSE
 README.md
+CHANGELOG.md
+**/*.md

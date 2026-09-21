@@ -4,12 +4,40 @@ ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT
 
-WORKDIR /src
-COPY . .
+WORKDIR /
 
-RUN echo "Running tests..." && \
+COPY Directory.Build.props global.json ./
+
+# Copy project files first for restore layer caching
+COPY src/StreamMaster.API/StreamMaster.API.csproj /src/StreamMaster.API/
+COPY src/StreamMaster.Application/StreamMaster.Application.csproj /src/StreamMaster.Application/
+COPY src/StreamMaster.Domain/StreamMaster.Domain.csproj /src/StreamMaster.Domain/
+COPY src/StreamMaster.EPG/StreamMaster.EPG.csproj /src/StreamMaster.EPG/
+COPY src/StreamMaster.Infrastructure/StreamMaster.Infrastructure.csproj /src/StreamMaster.Infrastructure/
+COPY src/StreamMaster.Infrastructure.EF/StreamMaster.Infrastructure.EF.csproj /src/StreamMaster.Infrastructure.EF/
+COPY src/StreamMaster.Infrastructure.EF.Base/StreamMaster.Infrastructure.EF.Base.csproj /src/StreamMaster.Infrastructure.EF.Base/
+COPY src/StreamMaster.Infrastructure.EF.PGSQL/StreamMaster.Infrastructure.EF.PGSQL.csproj /src/StreamMaster.Infrastructure.EF.PGSQL/
+COPY src/StreamMaster.PlayList/StreamMaster.PlayList.csproj /src/StreamMaster.PlayList/
+COPY src/StreamMaster.SchedulesDirect/StreamMaster.SchedulesDirect.csproj /src/StreamMaster.SchedulesDirect/
+COPY src/StreamMaster.SchedulesDirect.Domain/StreamMaster.SchedulesDirect.Domain.csproj /src/StreamMaster.SchedulesDirect.Domain/
+COPY src/StreamMaster.SchedulesDirect.Services/StreamMaster.SchedulesDirect.Services.csproj /src/StreamMaster.SchedulesDirect.Services/
+COPY src/StreamMaster.Streams/StreamMaster.Streams.csproj /src/StreamMaster.Streams/
+COPY src/StreamMaster.Streams.Domain/StreamMaster.Streams.Domain.csproj /src/StreamMaster.Streams.Domain/
+COPY src/tests/StreamMaster.Application.UnitTests/StreamMaster.Application.UnitTests.csproj /src/tests/StreamMaster.Application.UnitTests/
+COPY src/tests/StreamMaster.Infrastructure.UnitTests/StreamMaster.Infrastructure.UnitTests.csproj /src/tests/StreamMaster.Infrastructure.UnitTests/
+COPY src/tests/StreamMaster.SchedulesDirect.Services.UnitTests/StreamMaster.SchedulesDirect.Services.UnitTests.csproj /src/tests/StreamMaster.SchedulesDirect.Services.UnitTests/
+COPY src/tests/StreamMaster.Streams.UnitTests/StreamMaster.Streams.UnitTests.csproj /src/tests/StreamMaster.Streams.UnitTests/
+
+RUN --mount=type=cache,target=/.nuget/packages \
     for project in $(find src/tests -type f -name "*.csproj"); do \
-        echo "Found test project: $project" && \
+        dotnet restore "$project" -a $TARGETARCH --verbosity minimal; \
+    done
+
+COPY src /src
+
+RUN --mount=type=cache,target=/.nuget/packages \
+    echo "Running tests..." && \
+    for project in $(find src/tests -type f -name "*.csproj"); do \
         echo "Testing $project..." && \
-        dotnet test "$project" -a $TARGETARCH -c Debug --verbosity minimal; \
+        dotnet test "$project" -a $TARGETARCH -c Release --no-restore --verbosity minimal; \
     done
