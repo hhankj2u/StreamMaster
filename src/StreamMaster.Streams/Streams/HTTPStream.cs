@@ -101,7 +101,12 @@ public class HTTPStream(
 
     private GetStreamResult HandleHLSContent(SMStreamInfo smStreamInfo, string clientUserAgent, Stopwatch stopwatch, CancellationToken cancellationToken)
     {
-        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id, smStreamInfo.CommandProfile);
+        // Honor the channel/SG-resolved profile shown in Stream Info; M3U8 override only when Default.
+        CommandProfileDto commandProfileDto = smStreamInfo.CommandProfile != null
+            && !string.IsNullOrEmpty(smStreamInfo.CommandProfile.ProfileName)
+            && !smStreamInfo.CommandProfile.ProfileName.EqualsIgnoreCase("Default")
+            ? smStreamInfo.CommandProfile
+            : profileService.GetM3U8OutputProfile(smStreamInfo.Id);
 
         logger.LogInformation("Stream contains HLS content, using {ProfileName} for streaming: {StreamName}", commandProfileDto.ProfileName, smStreamInfo.Name);
 

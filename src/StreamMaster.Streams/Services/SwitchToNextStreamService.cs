@@ -243,8 +243,10 @@ public sealed class SwitchToNextStreamService(
     private async Task<bool> HandleStandardStreamAsync(IServiceScope scope, IStreamStatus channelStatus, SMStreamDto smStream, Setting settings)
     {
         IStreamGroupService streamGroupService = scope.ServiceProvider.GetRequiredService<IStreamGroupService>();
+        // Stream-level "Default"/null must not mask an explicit channel CommandProfileName.
+        string commandProfileName = ResolveCommandProfileName(smStream.CommandProfileName, channelStatus.SMChannel.CommandProfileName);
         CommandProfileDto commandProfile = await streamGroupService.GetProfileFromSGIdsCommandProfileNameAsync(
-            null, channelStatus.StreamGroupProfileId, smStream.CommandProfileName ?? channelStatus.SMChannel.CommandProfileName);
+            null, channelStatus.StreamGroupProfileId, commandProfileName);
 
         SMStreamInfo standardStreamInfo = new()
         {
@@ -262,5 +264,13 @@ public sealed class SwitchToNextStreamService(
             channelStatus.SourceName, standardStreamInfo.Id, standardStreamInfo.Name);
 
         return true;
+    }
+
+    private static string ResolveCommandProfileName(string? streamCommandProfileName, string channelCommandProfileName)
+    {
+        return !string.IsNullOrEmpty(streamCommandProfileName)
+            && !streamCommandProfileName.Equals("Default", StringComparison.InvariantCultureIgnoreCase)
+            ? streamCommandProfileName
+            : channelCommandProfileName;
     }
 }

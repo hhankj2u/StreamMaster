@@ -36,7 +36,7 @@ public class ProfileService(IOptionsMonitor<Setting> intSettings, IServiceProvid
         Setting settings = intSettings.CurrentValue;
 
         // Prefer an explicit channel/stream command profile over M3U8 file/settings overrides
-        if (IsExplicitCommandProfile(preferredCommandProfile, settings))
+        if (IsExplicitCommandProfile(preferredCommandProfile))
         {
             return preferredCommandProfile!;
         }
@@ -45,7 +45,7 @@ public class ProfileService(IOptionsMonitor<Setting> intSettings, IServiceProvid
         IRepositoryWrapper repositoryWrapper = scope.ServiceProvider.GetRequiredService<IRepositoryWrapper>();
         SMStream? smStream = repositoryWrapper.SMStream.GetSMStreamById(id);
 
-        if (IsExplicitCommandProfileName(smStream?.CommandProfileName, settings)
+        if (IsExplicitCommandProfileName(smStream?.CommandProfileName)
             && intCommandProfileSettings.CurrentValue.HasProfile(smStream!.CommandProfileName!))
         {
             return intCommandProfileSettings.CurrentValue.GetProfileDto(smStream.CommandProfileName!);
@@ -55,7 +55,7 @@ public class ProfileService(IOptionsMonitor<Setting> intSettings, IServiceProvid
         SMChannel? smChannel = repositoryWrapper.SMChannel.GetQuery()
             .Where(c => c.BaseStreamID == id)
             .AsEnumerable()
-            .FirstOrDefault(c => IsExplicitCommandProfileName(c.CommandProfileName, settings));
+            .FirstOrDefault(c => IsExplicitCommandProfileName(c.CommandProfileName));
         if (smChannel != null && intCommandProfileSettings.CurrentValue.HasProfile(smChannel.CommandProfileName))
         {
             return intCommandProfileSettings.CurrentValue.GetProfileDto(smChannel.CommandProfileName);
@@ -81,15 +81,15 @@ public class ProfileService(IOptionsMonitor<Setting> intSettings, IServiceProvid
         return intCommandProfileSettings.CurrentValue.GetProfileDto("SMFFMPEG");
     }
 
-    private static bool IsExplicitCommandProfile(CommandProfileDto? profile, Setting settings)
+    private static bool IsExplicitCommandProfile(CommandProfileDto? profile)
     {
-        return profile != null && IsExplicitCommandProfileName(profile.ProfileName, settings);
+        return profile != null && IsExplicitCommandProfileName(profile.ProfileName);
     }
 
-    private static bool IsExplicitCommandProfileName(string? profileName, Setting settings)
+    private static bool IsExplicitCommandProfileName(string? profileName)
     {
+        // Only the "Default" sentinel means "use M3U8 file/settings override".
         return !string.IsNullOrEmpty(profileName)
-            && !string.Equals(profileName, "Default", StringComparison.InvariantCultureIgnoreCase)
-            && !string.Equals(profileName, settings.DefaultCommandProfileName, StringComparison.InvariantCultureIgnoreCase);
+            && !string.Equals(profileName, "Default", StringComparison.InvariantCultureIgnoreCase);
     }
 }

@@ -379,3 +379,8 @@ src/StreamMaster.Docs/streammaster/site/*
 # Do not ignore some file paths that are "Logs"
 !src/StreamMaster.Application/Logs/
 !src/StreamMaster.WebUI/lib/smAPI/Logs/
+# Local env overrides (e.g. external Postgres for devcontainer)
+.devcontainer/.env
+
+# Local env (compose variable substitution)
+.env

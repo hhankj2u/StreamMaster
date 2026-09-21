@@ -85,7 +85,12 @@ public sealed class StreamFactory(
 
     private GetStreamResult ExecuteCommandForM3U8(SMStreamInfo smStreamInfo, string clientUserAgent, CancellationToken cancellationToken)
     {
-        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id, smStreamInfo.CommandProfile);
+        // SMStreamInfo.CommandProfile is what Stream Info shows (channel/SG resolved).
+        // Honor it for .m3u8 too; M3U file M3U8OutPutProfile only applies when still Default.
+        CommandProfileDto commandProfileDto = PreferResolvedCommandProfile(smStreamInfo.CommandProfile)
+            ? smStreamInfo.CommandProfile
+            : profileService.GetM3U8OutputProfile(smStreamInfo.Id);
+
         logger.LogInformation("Stream URL has m3u8 extension, using {ProfileName} for streaming: {StreamName}", commandProfileDto.ProfileName, smStreamInfo.Name);
 
         return commandExecutor.ExecuteCommand(commandProfileDto, smStreamInfo.Url, clientUserAgent, null, cancellationToken);
@@ -96,5 +101,12 @@ public sealed class StreamFactory(
         logger.LogInformation("Using Command Profile {ProfileName} for streaming: {StreamName}", smStreamInfo.CommandProfile.ProfileName, smStreamInfo.Name);
 
         return commandExecutor.ExecuteCommand(smStreamInfo.CommandProfile, smStreamInfo.Url, clientUserAgent, null, cancellationToken);
+    }
+
+    private static bool PreferResolvedCommandProfile(CommandProfileDto? profile)
+    {
+        return profile != null
+            && !string.IsNullOrEmpty(profile.ProfileName)
+            && !profile.ProfileName.EqualsIgnoreCase("Default");
     }
 }
