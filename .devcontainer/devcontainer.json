@@ -8,6 +8,8 @@
 		"vscode": {
 			"extensions": [
 				"ms-dotnettools.vscode-dotnet-runtime",
+				"anysphere.csharp",
+				"ms-dotnettools.csharp",
 				"ms-dotnettools.csdevkit",
 				"biomejs.biome"
 			],

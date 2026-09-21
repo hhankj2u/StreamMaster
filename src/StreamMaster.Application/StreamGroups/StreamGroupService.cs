@@ -364,20 +364,7 @@ public partial class StreamGroupService(IHttpContextAccessor httpContextAccessor
         // First get the StreamGroupProfile to check its assigned command profile
         StreamGroupProfile streamGroupProfile = await GetStreamGroupProfileAsync(streamGroupId, streamGroupProfileId).ConfigureAwait(false);
 
-        // Try to use the stream group's profile if it's not "Default"
-        if (!string.Equals(streamGroupProfile.CommandProfileName, "Default", StringComparison.InvariantCultureIgnoreCase))
-        {
-            try
-            {
-                return _commandProfileSettings.CurrentValue.GetProfileDto(streamGroupProfile.CommandProfileName);
-            }
-            catch
-            {
-                // If the stream group's profile doesn't exist, continue to next option
-            }
-        }
-
-        // Try to use the requested profile if it's not "Default"
+        // Channel/stream explicit profile wins over stream group (SMChannel.CommandProfileName column)
         if (!string.Equals(commandProfileName, "Default", StringComparison.InvariantCultureIgnoreCase))
         {
             try
@@ -387,6 +374,19 @@ public partial class StreamGroupService(IHttpContextAccessor httpContextAccessor
             catch
             {
                 // If the requested profile doesn't exist, continue to next option
+            }
+        }
+
+        // Then stream group profile if it's not "Default"
+        if (!string.Equals(streamGroupProfile.CommandProfileName, "Default", StringComparison.InvariantCultureIgnoreCase))
+        {
+            try
+            {
+                return _commandProfileSettings.CurrentValue.GetProfileDto(streamGroupProfile.CommandProfileName);
+            }
+            catch
+            {
+                // If the stream group's profile doesn't exist, continue to next option
             }
         }
 

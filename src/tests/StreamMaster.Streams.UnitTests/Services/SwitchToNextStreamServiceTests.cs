@@ -56,7 +56,12 @@ public class SwitchToNextStreamServiceTests
             ServiceScopeMock.Setup(x => x.ServiceProvider).Returns(ScopeServiceProviderMock.Object);
 
             // Setup repository in scope
-            RepositoryMock.Setup(x => x.SMStream).Returns(new Mock<ISMStreamRepository>().Object);
+            var smStreamRepository = new Mock<ISMStreamRepository>();
+            var smChannelRepository = new Mock<ISMChannelsRepository>();
+            smChannelRepository.Setup(x => x.GetSMChannel(It.IsAny<int>()))
+                .Returns((SMChannel?)null);
+            RepositoryMock.Setup(x => x.SMStream).Returns(smStreamRepository.Object);
+            RepositoryMock.Setup(x => x.SMChannel).Returns(smChannelRepository.Object);
             ScopeServiceProviderMock.Setup(x => x.GetService(typeof(IRepositoryWrapper)))
                 .Returns(RepositoryMock.Object);
 

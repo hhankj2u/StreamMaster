@@ -243,10 +243,25 @@ public sealed class SwitchToNextStreamService(
     private async Task<bool> HandleStandardStreamAsync(IServiceScope scope, IStreamStatus channelStatus, SMStreamDto smStream, Setting settings)
     {
         IStreamGroupService streamGroupService = scope.ServiceProvider.GetRequiredService<IStreamGroupService>();
+        IRepositoryWrapper repositoryWrapper = scope.ServiceProvider.GetRequiredService<IRepositoryWrapper>();
+
+        // Broadcaster may hold a stale SMChannelDto after Profile Name is changed in the UI — reload from DB.
+        SMChannel? dbChannel = repositoryWrapper.SMChannel.GetSMChannel(channelStatus.SMChannel.Id);
+        string channelCommandProfileName = !string.IsNullOrEmpty(dbChannel?.CommandProfileName)
+            ? dbChannel.CommandProfileName
+            : channelStatus.SMChannel.CommandProfileName;
+
+        // Keep broadcaster in sync so Stream Info matches what we stream with
+        channelStatus.SMChannel.CommandProfileName = channelCommandProfileName;
+
         // Stream-level "Default"/null must not mask an explicit channel CommandProfileName.
-        string commandProfileName = ResolveCommandProfileName(smStream.CommandProfileName, channelStatus.SMChannel.CommandProfileName);
+        string commandProfileName = ResolveCommandProfileName(smStream.CommandProfileName, channelCommandProfileName);
         CommandProfileDto commandProfile = await streamGroupService.GetProfileFromSGIdsCommandProfileNameAsync(
             null, channelStatus.StreamGroupProfileId, commandProfileName);
+
+        logger.LogInformation(
+            "Resolved command profile {ProfileName} for channel {ChannelName} (requested={RequestedProfile}, stream={StreamProfile})",
+            commandProfile.ProfileName, channelStatus.SMChannel.Name, commandProfileName, smStream.CommandProfileName ?? "(null)");
 
         SMStreamInfo standardStreamInfo = new()
         {
