@@ -23,12 +23,9 @@ Before you begin, ensure the following are installed:
 
 ## Supported Architectures 🖥️
 
-StreamMaster supports multiple architectures to ensure compatibility across various systems:
+StreamMaster Docker images are published for **amd64** (most desktop/server environments).
 
-- **amd64** (most desktop/server environments)
-- **arm64** (suitable for ARM-based devices)
-
-The correct image for your architecture can be automatically pulled by using the `ghcr.io/hhankj2u/streammaster:latest` tag.
+Pull the image with: `ghcr.io/hhankj2u/streammaster:latest`
 
 ---
 
@@ -88,7 +85,7 @@ services:
 
 ### Configuration Explained 🔍
 
-- **Image**: Specifies the StreamMaster image to use. `hhankj2u/streammaster:latest`
+- **Image**: Specifies the StreamMaster image to use. `ghcr.io/hhankj2u/streammaster:latest`
 - **Ports**:
   - `7095`: The default HTTP port for StreamMaster's web interface (default: `7095`).
     _Make sure port matches the `DEFAULT_PORT`._

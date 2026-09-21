@@ -1,4 +1,4 @@
-LABEL org.opencontainers.image.url="https://hub.docker.com/r/hhankj2u/streammaster/" \
+LABEL org.opencontainers.image.url="https://github.com/hhankj2u/StreamMaster/pkgs/container/streammaster" \
       org.opencontainers.image.source="https://github.com/hhankj2u/StreamMaster" \
       org.opencontainers.image.vendor="hhankj2u" \
       org.opencontainers.image.title="Stream Master" \

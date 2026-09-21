@@ -1,15 +1,12 @@
 # Set the base image for the ASP.NET Core application
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 
-# Define build-time arguments for platform and architecture
 ARG TARGETARCH
 ARG TARGETVARIANT
 # Pin to BtbN month-end autobuild (kept ~2 years). Update periodically.
-ARG FFMPEG_URL_ARM64="https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-N-126342-gf88b741dbf-linuxarm64-lgpl.tar.xz"
-ARG FFMPEG_URL_X64="https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-N-126342-gf88b741dbf-linux64-gpl.tar.xz"
+ARG FFMPEG_URL="https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-08-31-13-27/ffmpeg-N-126342-gf88b741dbf-linux64-gpl.tar.xz"
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Set working directory
 WORKDIR /app
 
 # Preserve downloaded APT packages and remove docker-clean configuration
@@ -33,29 +30,15 @@ RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/v
     gnupg \
     lsb-release \
     iputils-ping \
-    pipx
-
-RUN --mount=type=cache,id=apt-$TARGETARCH$TARGETVARIANT,sharing=locked,target=/var/cache/apt \
-    if [ "$TARGETARCH" = "amd64" ]; then \
-    apt-get update -yq \
-    && apt-get install -yq --no-install-recommends \
+    pipx \
     mesa-va-drivers \
-    intel-media-va-driver-non-free; \
-    else \
-    echo "Skipping mesa-va-drivers and intel-media-va-driver-non-free installation for $TARGETARCH"; \
-    fi
+    intel-media-va-driver-non-free
 
 RUN apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /docker-entrypoint-initdb.d
 
-# Conditional FFmpeg URL based on architecture
-RUN if [ "$TARGETARCH" = "arm64" ]; then \
-    export FFMPEG_URL=$FFMPEG_URL_ARM64; \
-    else \
-    export FFMPEG_URL=$FFMPEG_URL_X64; \
-    fi \
-    && curl -L -o /tmp/ffmpeg.tar.xz $FFMPEG_URL \
+RUN curl -L -o /tmp/ffmpeg.tar.xz "$FFMPEG_URL" \
     && mkdir -p /tmp/ffmpeg/ \
     && tar -Jxvf /tmp/ffmpeg.tar.xz --strip-components=1 -C /tmp/ffmpeg/ \
     && cp /tmp/ffmpeg/bin/ffmpeg /usr/local/bin/ \
@@ -66,7 +49,5 @@ RUN if [ "$TARGETARCH" = "arm64" ]; then \
 ENV PIPX_BIN_DIR=/usr/local/bin
 ENV PIPX_HOME=/opt/pipx
 
-# Pipx utilities
 RUN pipx install streamlink
-
 RUN pipx install yt-dlp

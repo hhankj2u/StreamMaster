@@ -46,7 +46,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_TOKEN }}
+          fetch-tags: true
+          # Prefer a PAT so pushes can trigger other workflows; fall back to GITHUB_TOKEN
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
           
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -70,32 +72,38 @@ jobs:
       - name: Semantic Release
         id: semantic
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || github.token }}
         run: |
-          set -e
+          set -euo pipefail
 
-          # Configure git user
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
 
-          # Fetch only the latest tag instead of all tags
-          git fetch --depth=1 origin refs/tags/*:refs/tags/*
+          # Tags may not exist yet — never fail the job on an empty fetch
+          git fetch --tags --force origin || true
 
-          # Run semantic-release with force flag
-          if npx semantic-release; then
-            # Force push to handle any tag conflicts on re-runs
-            git push --follow-tags --force origin HEAD:${{ github.ref }}
+          PUBLISHED=false
+          # semantic-release exits non-zero when the branch isn't configured or
+          # there is nothing to release; still continue so the Docker build runs.
+          set +e
+          npx semantic-release
+          SR_EXIT=$?
+          set -e
+
+          if [[ "$SR_EXIT" -eq 0 ]]; then
+            PUBLISHED=true
+            git push --follow-tags --force origin "HEAD:${{ github.ref }}" || true
           else
-            # If no new release would be created, set the outputs manually
-            echo "new_release_published=false" >> $GITHUB_OUTPUT
+            echo "semantic-release exited with $SR_EXIT (no release or branch not configured)"
           fi
-          
-          # Get the latest tag without requiring all tags
+
+          echo "new_release_published=$PUBLISHED" >> "$GITHUB_OUTPUT"
+
           LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ ! -z "$LATEST_TAG" ]; then
-              echo "new_release_version=${LATEST_TAG#v}" >> $GITHUB_OUTPUT
+          if [[ -n "$LATEST_TAG" ]]; then
+            echo "new_release_version=${LATEST_TAG#v}" >> "$GITHUB_OUTPUT"
           else
-              echo "new_release_version=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "new_release_version=${{ github.sha }}" >> "$GITHUB_OUTPUT"
           fi
 
   build:
@@ -109,7 +117,5 @@ jobs:
       build_sm: ${{ github.event_name == 'workflow_dispatch' && inputs.build_sm || false }}
       skip_release_main_build: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_release_main_build || false }}
       release_as_latest: ${{ github.event_name == 'workflow_dispatch' && inputs.release_as_latest || needs.semantic-release.outputs.new_release_published == 'true' }}
-      # Releases: multi-arch; PRs use pr-build.yml (amd64-only)
-      platforms: linux/amd64,linux/arm64
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

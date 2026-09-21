@@ -29,8 +29,8 @@ COPY src/StreamMaster.SchedulesDirect.Services/StreamMaster.SchedulesDirect.Serv
 COPY src/StreamMaster.Streams/StreamMaster.Streams.csproj /src/StreamMaster.Streams/
 COPY src/StreamMaster.Streams.Domain/StreamMaster.Streams.Domain.csproj /src/StreamMaster.Streams.Domain/
 
-RUN --mount=type=cache,target=/.nuget/packages \
-    dotnet restore "/src/StreamMaster.API/StreamMaster.API.csproj" -a $TARGETARCH --verbosity minimal
+RUN --mount=type=cache,id=nuget-$TARGETARCH,sharing=locked,target=/.nuget/packages \
+    dotnet restore "/src/StreamMaster.API/StreamMaster.API.csproj" -a $TARGETARCH --disable-parallel --verbosity minimal
 
 # --- Full source (invalidates only build layers on code change) ---
 COPY src /src
@@ -42,7 +42,7 @@ RUN echo "Building frontend..." && \
     cp -rpv dist/* ../StreamMaster.API/wwwroot/
 
 # Publish API (restore already done; nuget cache still mounted for any transitive pulls)
-RUN --mount=type=cache,target=/.nuget/packages \
+RUN --mount=type=cache,id=nuget-$TARGETARCH,sharing=locked,target=/.nuget/packages \
     cd /src/StreamMaster.API && \
     dotnet publish "StreamMaster.API.csproj" -c Release -o /app/publish /p:UseAppHost=false -a $TARGETARCH --no-restore --verbosity minimal
 

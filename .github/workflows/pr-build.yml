@@ -39,7 +39,5 @@ jobs:
       build_build: ${{ needs.changes.outputs.build == 'true' }}
       build_sm: true
       release_as_latest: false
-      # PRs: native amd64 only — skip QEMU multi-arch cost
-      platforms: linux/amd64
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}
