@@ -101,7 +101,7 @@ public class HTTPStream(
 
     private GetStreamResult HandleHLSContent(SMStreamInfo smStreamInfo, string clientUserAgent, Stopwatch stopwatch, CancellationToken cancellationToken)
     {
-        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id);
+        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id, smStreamInfo.CommandProfile);
 
         logger.LogInformation("Stream contains HLS content, using {ProfileName} for streaming: {StreamName}", commandProfileDto.ProfileName, smStreamInfo.Name);
 

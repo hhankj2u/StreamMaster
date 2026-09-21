@@ -85,7 +85,7 @@ public sealed class StreamFactory(
 
     private GetStreamResult ExecuteCommandForM3U8(SMStreamInfo smStreamInfo, string clientUserAgent, CancellationToken cancellationToken)
     {
-        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id);
+        CommandProfileDto commandProfileDto = profileService.GetM3U8OutputProfile(smStreamInfo.Id, smStreamInfo.CommandProfile);
         logger.LogInformation("Stream URL has m3u8 extension, using {ProfileName} for streaming: {StreamName}", commandProfileDto.ProfileName, smStreamInfo.Name);
 
         return commandExecutor.ExecuteCommand(commandProfileDto, smStreamInfo.Url, clientUserAgent, null, cancellationToken);
