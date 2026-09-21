@@ -24,4 +24,7 @@ export const defaultBaseUrl = config.defaultBaseUrl;
 export const baseHostURL =
 	isClient && !isDev
 		? `${window.location.protocol}//${window.location.host}`
-		: `http://localhost:${defaultPort}${defaultBaseUrl}`;
+		: isClient
+			? // Use current hostname so LAN IP access works for VLC/clients
+				`${window.location.protocol}//${window.location.hostname}:${defaultPort}${defaultBaseUrl}`
+			: `http://localhost:${defaultPort}${defaultBaseUrl}`;

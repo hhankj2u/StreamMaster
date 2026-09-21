@@ -1,19 +1,45 @@
 name: PR Docker Build
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, reopened]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
   contents: read
   packages: write
 
 jobs:
+  changes:
+    runs-on: ubuntu-24.04
+    outputs:
+      base: ${{ steps.filter.outputs.base }}
+      build: ${{ steps.filter.outputs.build }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Detect Dockerfile changes
+        uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            base:
+              - 'Dockerfile.base'
+            build:
+              - 'Dockerfile.build'
+
   build:
+    needs: [changes]
     uses: ./.github/workflows/docker-build-shared.yml
     with:
       version: pr-${{ github.event.pull_request.number }}
-      build_all: true
+      build_all: false
+      build_base: ${{ needs.changes.outputs.base == 'true' }}
+      build_build: ${{ needs.changes.outputs.build == 'true' }}
+      build_sm: true
       release_as_latest: false
+      # PRs: native amd64 only — skip QEMU multi-arch cost
+      platforms: linux/amd64
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

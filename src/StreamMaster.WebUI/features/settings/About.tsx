@@ -59,7 +59,7 @@ const About = () => {
               justText
               title={settings.Release ?? ""}
               link={
-                "https://github.com/carlreid/StreamMaster/releases/tag/v" +
+                "https://github.com/hhankj2u/StreamMaster/releases/tag/v" +
                 settings.Release
               }
             />
@@ -154,7 +154,7 @@ const About = () => {
 
           <div className="text-center text-xs mt-2 mb-2">
                 <a 
-                  href="https://github.com/carlreid/StreamMaster/blob/main/.github/CONTRIBUTING.md" 
+                  href="https://github.com/hhankj2u/StreamMaster/blob/main/.github/CONTRIBUTING.md" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-primary hover:text-primary-600"

@@ -9,7 +9,7 @@ namespace StreamMaster.Infrastructure.EF.PGSQL
 {
     public partial class PGSQLRepositoryContext(DbContextOptions<PGSQLRepositoryContext> options, ILogger<PGSQLRepositoryContext> logger) : BaseRepositoryContext(options)
     {
-        public static string DbConnectionString => $"Host={BuildInfo.DBHost};Database={BuildInfo.DBName};Username={BuildInfo.DBUser};Password={BuildInfo.DBPassword}";
+        public static string DbConnectionString => $"Host={BuildInfo.DBHost};Port={BuildInfo.DBPort};Database={BuildInfo.DBName};Username={BuildInfo.DBUser};Password={BuildInfo.DBPassword}";
 
         public async Task MigrateDatabaseAsync()
         {

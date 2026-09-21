@@ -28,7 +28,7 @@ StreamMaster supports multiple architectures to ensure compatibility across vari
 - **amd64** (most desktop/server environments)
 - **arm64** (suitable for ARM-based devices)
 
-The correct image for your architecture can be automatically pulled by using the `ghcr.io/carlreid/streammaster:latest` tag.
+The correct image for your architecture can be automatically pulled by using the `ghcr.io/hhankj2u/streammaster:latest` tag.
 
 ---
 
@@ -51,7 +51,7 @@ Create a `docker-compose.yml` file in your preferred directory and copy the foll
 ```yaml
 services:
   streammaster:
-    image: ghcr.io/carlreid/streammaster:latest
+    image: ghcr.io/hhankj2u/streammaster:latest
     container_name: streammaster
     ports:
       - 7095:7095
@@ -88,7 +88,7 @@ services:
 
 ### Configuration Explained 🔍
 
-- **Image**: Specifies the StreamMaster image to use. `carlreid/streammaster:latest`
+- **Image**: Specifies the StreamMaster image to use. `hhankj2u/streammaster:latest`
 - **Ports**:
   - `7095`: The default HTTP port for StreamMaster's web interface (default: `7095`).
     _Make sure port matches the `DEFAULT_PORT`._

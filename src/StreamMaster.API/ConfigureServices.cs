@@ -60,25 +60,36 @@ public static class ConfigureServices
         services.AddCors(options =>
         {
             options.AddPolicy("DevPolicy",
-                builder =>
-                builder
-                .WithOrigins("http://localhost:3000")
-                .WithOrigins("http://127.0.0.1:3000")
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials()
-                );
+                corsBuilder =>
+                {
+                    if (builder.Environment.IsDevelopment())
+                    {
+                        // Allow LAN IPs (e.g. http://192.168.x.x:3000) as well as localhost
+                        corsBuilder.SetIsOriginAllowed(_ => true);
+                    }
+                    else
+                    {
+                        corsBuilder
+                            .WithOrigins("http://localhost:3000")
+                            .WithOrigins("http://127.0.0.1:3000");
+                    }
+
+                    corsBuilder
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                });
 
             options.AddPolicy(VersionedApiControllerAttribute.API_CORS_POLICY,
-                builder =>
-                builder
+                corsBuilder =>
+                corsBuilder
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());
 
             options.AddPolicy("AllowGet",
-                builder =>
-                builder
+                corsBuilder =>
+                corsBuilder
                 .AllowAnyOrigin()
                 .AllowAnyMethod()
                 .AllowAnyHeader());

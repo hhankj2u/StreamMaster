@@ -140,7 +140,7 @@ public partial class StreamGroupServiceTests
     }
 
     [Fact]
-    public async Task GetProfileFromSGIdsCommandProfileNameAsync_StreamGroupProfileHasCommandProfile_PrefersStreamGroupProfile()
+    public async Task GetProfileFromSGIdsCommandProfileNameAsync_ChannelCommandProfile_PrefersChannelOverStreamGroup()
     {
         // Arrange
         int streamGroupId = 1;
@@ -186,10 +186,10 @@ public partial class StreamGroupServiceTests
         // Act
         var result = await _streamGroupService.GetProfileFromSGIdsCommandProfileNameAsync(streamGroupId, streamGroupProfileId, requestedCommandProfileName);
 
-        // Assert
+        // Assert — explicit channel/stream profile wins over stream group
         result.ShouldNotBeNull();
-        result.ProfileName.ShouldBe(streamGroupProfileCommandName);
-        result.Command.ShouldBe("streamgroup");
+        result.ProfileName.ShouldBe(requestedCommandProfileName);
+        result.Command.ShouldBe("requested");
     }
 
     [Fact]

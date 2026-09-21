@@ -59,6 +59,7 @@ BenchmarkDotNet.Artifacts/
 project.lock.json
 project.fragment.lock.json
 artifacts/
+.nuget/
 
 # StyleCop
 StyleCopReport.xml
@@ -354,8 +355,6 @@ src//StreamMasterAPI/devwwwroot
 src//StreamMasterAPI/wwwroot
 src//StreamMasterAPI/sd_token.json
 src//StreamMasterAPI/dupes*
-src/StreamMaster.WebUI/package-lock.json
-src/StreamMaster.WebUI/package-lock.json
 src/StreamMaster.WebUI/deps.txt
 build
 coverage
@@ -379,3 +378,8 @@ src/StreamMaster.Docs/streammaster/site/*
 # Do not ignore some file paths that are "Logs"
 !src/StreamMaster.Application/Logs/
 !src/StreamMaster.WebUI/lib/smAPI/Logs/
+# Local env overrides (e.g. external Postgres for devcontainer)
+.devcontainer/.env
+
+# Local env (compose variable substitution)
+.env

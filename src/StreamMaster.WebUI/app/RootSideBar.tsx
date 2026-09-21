@@ -151,7 +151,7 @@ export const RootSideBar = () => {
 					<MenuItemSM
 						collapsed={collapsed}
 						icon={<HelpIcon />}
-						link="https://carlreid.github.io/StreamMaster/"
+						link="https://hhankj2u.github.io/StreamMaster/"
 						name="Wiki"
 						newWindow
 					/>

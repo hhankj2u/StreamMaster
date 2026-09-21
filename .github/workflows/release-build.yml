@@ -34,7 +34,7 @@ permissions:
 jobs:
   semantic-release:
     if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment: release
     permissions:
       contents: write
@@ -43,15 +43,15 @@ jobs:
       new_release_version: ${{ steps.semantic.outputs.new_release_version }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN }}
           
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
+          node-version: '24'
 
       - name: Install dependencies
         run: |
@@ -109,5 +109,7 @@ jobs:
       build_sm: ${{ github.event_name == 'workflow_dispatch' && inputs.build_sm || false }}
       skip_release_main_build: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_release_main_build || false }}
       release_as_latest: ${{ github.event_name == 'workflow_dispatch' && inputs.release_as_latest || needs.semantic-release.outputs.new_release_published == 'true' }}
+      # Releases: multi-arch; PRs use pr-build.yml (amd64-only)
+      platforms: linux/amd64,linux/arm64
     secrets:
       token: ${{ secrets.GITHUB_TOKEN }}

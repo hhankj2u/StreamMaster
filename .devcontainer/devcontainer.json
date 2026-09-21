@@ -3,19 +3,13 @@
 	"dockerComposeFile": "development-docker-compose.yml",
 	"service": "streammaster-app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-	"features": {
-		"ghcr.io/devcontainers/features/node:1": {
-			"version": "lts"
-		},
-		"ghcr.io/devcontainers/features/dotnet:1": {
-			"version": "9.0"
-		},
-		"ghcr.io/devcontainers-extra/features/ffmpeg-apt-get:1": {}
-	},
+	"remoteUser": "vscode",
 	"customizations": {
 		"vscode": {
 			"extensions": [
 				"ms-dotnettools.vscode-dotnet-runtime",
+				"anysphere.csharp",
+				"ms-dotnettools.csharp",
 				"ms-dotnettools.csdevkit",
 				"biomejs.biome"
 			],

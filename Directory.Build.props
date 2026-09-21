@@ -2,5 +2,7 @@
   <PropertyGroup>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <!-- Keep restores out of Cursor's ephemeral NUGET_PACKAGES sandbox cache. -->
+    <RestorePackagesPath>$(MSBuildThisFileDirectory).nuget/packages</RestorePackagesPath>
   </PropertyGroup>
 </Project>

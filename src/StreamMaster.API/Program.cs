@@ -154,6 +154,19 @@ if (!bool.TryParse(builder.Configuration["EnableSSL"], out enableSsl))
 
 Setting? setting = SettingsHelper.GetSetting<Setting>(BuildInfo.SettingsFile);
 
+// Prefer env so Docker/LAN clients (VLC) get reachable stream URLs, not localhost
+string? baseHostUrl = Environment.GetEnvironmentVariable("STREAMMASTER_BASEHOSTURL");
+if (!string.IsNullOrWhiteSpace(baseHostUrl) && setting != null)
+{
+    string normalized = baseHostUrl.Trim().TrimEnd('/');
+    if (!string.Equals(setting.STRMBaseURL, normalized, StringComparison.OrdinalIgnoreCase))
+    {
+        setting.STRMBaseURL = normalized;
+        SettingsHelper.UpdateSetting(setting);
+        Log($"STRMBaseURL set from STREAMMASTER_BASEHOSTURL to {normalized}");
+    }
+}
+
 List<string> urls = [$"http://0.0.0.0:{BuildInfo.DEFAULT_PORT}"];
 
 if (enableSsl && !string.IsNullOrEmpty(sslCertPath))

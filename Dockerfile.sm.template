@@ -3,20 +3,48 @@ ARG TARGETARCH
 ARG BUILDPLATFORM
 ENV TARGETPLATFORM=${TARGETPLATFORM:-linux/amd64}
 
-# Copy only the src directory
+WORKDIR /
+
+# Shared MSBuild / SDK config (affects restore path via Directory.Build.props)
+COPY Directory.Build.props global.json ./
+
+# --- Frontend deps (cached unless lockfile changes) ---
+COPY src/StreamMaster.WebUI/package.json src/StreamMaster.WebUI/package-lock.json /src/StreamMaster.WebUI/
+RUN --mount=type=cache,target=/root/.npm \
+    cd /src/StreamMaster.WebUI && npm ci
+
+# --- Backend deps (cached unless csproj / props change) ---
+COPY src/StreamMaster.API/StreamMaster.API.csproj /src/StreamMaster.API/
+COPY src/StreamMaster.Application/StreamMaster.Application.csproj /src/StreamMaster.Application/
+COPY src/StreamMaster.Domain/StreamMaster.Domain.csproj /src/StreamMaster.Domain/
+COPY src/StreamMaster.EPG/StreamMaster.EPG.csproj /src/StreamMaster.EPG/
+COPY src/StreamMaster.Infrastructure/StreamMaster.Infrastructure.csproj /src/StreamMaster.Infrastructure/
+COPY src/StreamMaster.Infrastructure.EF/StreamMaster.Infrastructure.EF.csproj /src/StreamMaster.Infrastructure.EF/
+COPY src/StreamMaster.Infrastructure.EF.Base/StreamMaster.Infrastructure.EF.Base.csproj /src/StreamMaster.Infrastructure.EF.Base/
+COPY src/StreamMaster.Infrastructure.EF.PGSQL/StreamMaster.Infrastructure.EF.PGSQL.csproj /src/StreamMaster.Infrastructure.EF.PGSQL/
+COPY src/StreamMaster.PlayList/StreamMaster.PlayList.csproj /src/StreamMaster.PlayList/
+COPY src/StreamMaster.SchedulesDirect/StreamMaster.SchedulesDirect.csproj /src/StreamMaster.SchedulesDirect/
+COPY src/StreamMaster.SchedulesDirect.Domain/StreamMaster.SchedulesDirect.Domain.csproj /src/StreamMaster.SchedulesDirect.Domain/
+COPY src/StreamMaster.SchedulesDirect.Services/StreamMaster.SchedulesDirect.Services.csproj /src/StreamMaster.SchedulesDirect.Services/
+COPY src/StreamMaster.Streams/StreamMaster.Streams.csproj /src/StreamMaster.Streams/
+COPY src/StreamMaster.Streams.Domain/StreamMaster.Streams.Domain.csproj /src/StreamMaster.Streams.Domain/
+
+RUN --mount=type=cache,target=/.nuget/packages \
+    dotnet restore "/src/StreamMaster.API/StreamMaster.API.csproj" -a $TARGETARCH --verbosity minimal
+
+# --- Full source (invalidates only build layers on code change) ---
 COPY src /src
 
 # Build UI
 RUN echo "Building frontend..." && \
     cd /src/StreamMaster.WebUI && \
-    npm install && \
     npm run build && \
     cp -rpv dist/* ../StreamMaster.API/wwwroot/
 
-# Build and publish API
-RUN cd /src/StreamMaster.API && \
-    dotnet restore "StreamMaster.API.csproj" -a $TARGETARCH --verbosity m && \
-    dotnet publish "StreamMaster.API.csproj" -c Debug -o /app/publish /p:UseAppHost=false -a $TARGETARCH --verbosity m
+# Publish API (restore already done; nuget cache still mounted for any transitive pulls)
+RUN --mount=type=cache,target=/.nuget/packages \
+    cd /src/StreamMaster.API && \
+    dotnet publish "StreamMaster.API.csproj" -c Release -o /app/publish /p:UseAppHost=false -a $TARGETARCH --no-restore --verbosity minimal
 
 # Verify the wwwroot directory contents
 RUN ls -la /app/publish/wwwroot || true
