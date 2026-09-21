@@ -28,6 +28,12 @@ Docker Hub alternative: `hhankj2u/streammaster:latest`
 
 Public channel lists: [iptv-org](https://github.com/iptv-org/iptv) · Logos: [tv-logos](https://github.com/tv-logo/tv-logos)
 
+## What's New in This Fork
+
+**Per-channel command profiles for HLS/M3U8** — If a channel’s Profile Name is set to something other than `Default`, that profile is used for playback (including `.m3u8` / HLS streams). The M3U file `M3U8OutPutProfile` only applies when the channel is still on `Default`.
+
+Priority: channel profile → stream group profile → M3U8 file / settings fallback.
+
 ## Credits
 
 Based on [carlreid/StreamMaster](https://github.com/carlreid/StreamMaster).
