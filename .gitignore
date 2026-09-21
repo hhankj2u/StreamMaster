@@ -355,8 +355,6 @@ src//StreamMasterAPI/devwwwroot
 src//StreamMasterAPI/wwwroot
 src//StreamMasterAPI/sd_token.json
 src//StreamMasterAPI/dupes*
-src/StreamMaster.WebUI/package-lock.json
-src/StreamMaster.WebUI/package-lock.json
 src/StreamMaster.WebUI/deps.txt
 build
 coverage
