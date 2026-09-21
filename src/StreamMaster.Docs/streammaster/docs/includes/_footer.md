@@ -1,6 +1,6 @@
 ## Need Help or Have Questions?
 
-For any questions, support, or discussions, you can [open a new discussion](https://github.com/carlreid/StreamMaster/discussions).
+For any questions, support, or discussions, you can [open a new discussion](https://github.com/hhankj2u/StreamMaster/discussions).
 
 ---
 

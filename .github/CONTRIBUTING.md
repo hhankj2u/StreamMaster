@@ -4,7 +4,7 @@ Thank you for your interest in contributing 🤗! This document provides guideli
 
 ## Getting Started
 
-1. [Fork the repository](https://github.com/carlreid/StreamMaster/fork)
+1. [Fork the repository](https://github.com/hhankj2u/StreamMaster/fork)
 2. Clone your fork: `git clone https://github.com/[your-github-username]/StreamMaster.git`
 3. Create a new branch: `git checkout -b [your-feature-name]`
 
@@ -99,7 +99,7 @@ Access UI at: http://localhost:3000
 
 ## Reporting Issues
 
-- Use the [GitHub issue tracker](https://github.com/carlreid/StreamMaster/issues)
+- Use the [GitHub issue tracker](https://github.com/hhankj2u/StreamMaster/issues)
 - Check existing issues before creating new ones
 - Provide clear steps to reproduce bugs
 - Include relevant system information and logs
@@ -110,4 +110,4 @@ By participating in this project, you agree to maintain a respectful and inclusi
 
 ## Questions?
 
-Feel free to [open a discussion](https://github.com/carlreid/StreamMaster/discussions) for any questions not covered by this guide.
+Feel free to [open a discussion](https://github.com/hhankj2u/StreamMaster/discussions) for any questions not covered by this guide.

@@ -7,7 +7,8 @@ services:
 
     volumes:
       - ../..:/workspaces:cached
-      - node_modules:/workspaces/${localWorkspaceFolderBasename}/node_modules
+      # Web UI deps live under src/StreamMaster.WebUI, not the repo root.
+      - node_modules:/workspaces/${localWorkspaceFolderBasename}/src/StreamMaster.WebUI/node_modules
       - streammaster-config:/config
 
     # Overrides default command so things don't shut down after the process ends.
@@ -16,8 +17,6 @@ services:
     ports:
       - "7095:7095" # .NET API port
       - "3000:3000" # Vite Web UI
-
-    user: "1000:1000"
 
     environment:
       ASPNETCORE_ENVIRONMENT: Development

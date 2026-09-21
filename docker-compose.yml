@@ -2,7 +2,7 @@ version: '3.4'
 
 services:
   streammaster:
-    image: ghcr.io/carlreid/streammaster:latest
+    image: ghcr.io/hhankj2u/streammaster:latest
     build:
       context: .
       dockerfile: ./Dockerfile

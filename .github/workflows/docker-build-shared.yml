@@ -34,8 +34,9 @@ permissions:
 
 env:
   REGISTRY: ghcr.io
-  BASE_IMAGE_NAME: ${{ github.repository_owner }}/streammaster-builds
-  FINAL_IMAGE_NAME: ${{ github.repository_owner }}/streammaster
+  IMAGE_OWNER: hhankj2u
+  BASE_IMAGE_NAME: hhankj2u/streammaster-builds
+  FINAL_IMAGE_NAME: hhankj2u/streammaster
 
 jobs:
   setup:
@@ -120,7 +121,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
+          username: ${{ env.IMAGE_OWNER }}
           password: ${{ secrets.token }}
 
       - name: Base - Build and Push

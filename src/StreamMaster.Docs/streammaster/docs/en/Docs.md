@@ -1,6 +1,6 @@
 # 📘 StreamMaster Documentation
 
-This document outlines the steps to set up and manage documentation for the [StreamMaster](https://github.com/carlreid/StreamMaster) project using MkDocs. The setup includes support for internationalization (i18n) and the use of MkDocs Material theme for a modern look and feel.
+This document outlines the steps to set up and manage documentation for the [StreamMaster](https://github.com/hhankj2u/StreamMaster) project using MkDocs. The setup includes support for internationalization (i18n) and the use of MkDocs Material theme for a modern look and feel.
 
 ## Why Contribute to the Documentation?
 
@@ -60,14 +60,14 @@ This will host the documentation locally on `http://localhost:8000`.
 When you're ready to deploy the documentation to production, ensure you clean the previous build and set the site URL correctly. Run the following command:
 
 ```bash
-mkdocs build --clean --site-url https://carlreid.github.io/StreamMaster/
+mkdocs build --clean --site-url https://hhankj2u.github.io/StreamMaster/
 ```
 
 This builds a clean version of the documentation and sets the correct URL for the production site.
 
 ## 📝 Contributing to the Documentation
 
-Documentation files live under the `StreamMaster.Docs\streammaster` folder in the [StreamMaster repository](https://github.com/carlreid/StreamMaster).
+Documentation files live under the `StreamMaster.Docs\streammaster` folder in the [StreamMaster repository](https://github.com/hhankj2u/StreamMaster).
 
 To contribute to the documentation:
 
@@ -108,4 +108,4 @@ Jump in, and let's make StreamMaster better together! ✨
 
 ## Need Help or Have Questions?
 
-For any questions, support, or discussions, you can [open a new discussion](https://github.com/carlreid/StreamMaster/discussions).
+For any questions, support, or discussions, you can [open a new discussion](https://github.com/hhankj2u/StreamMaster/discussions).

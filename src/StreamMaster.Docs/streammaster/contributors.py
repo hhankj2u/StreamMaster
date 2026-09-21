@@ -1,7 +1,7 @@
 import requests
 
 # Replace with your repository details
-repo_owner = "carlreid"
+repo_owner = "hhankj2u"
 repo_name = "StreamMaster"
 contributors_url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contributors"
 

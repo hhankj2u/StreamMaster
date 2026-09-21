@@ -16,7 +16,7 @@ We take security vulnerabilities seriously, especially given that StreamMaster h
 ### How to Report
 
 1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. Please [open a private security advisory](https://github.com/carlreid/StreamMaster/security/advisories/new) through GitHub's Security tab
+2. Please [open a private security advisory](https://github.com/hhankj2u/StreamMaster/security/advisories/new) through GitHub's Security tab
 3. Include:
    - Description of the vulnerability
    - Steps to reproduce

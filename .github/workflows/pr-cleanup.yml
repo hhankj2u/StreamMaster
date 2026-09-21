@@ -12,21 +12,22 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PR_VERSION: pr-${{ github.event.pull_request.number }}
-      BASE_IMAGE_NAME: ${{ github.repository_owner }}/streammaster-builds
-      FINAL_IMAGE_NAME: ${{ github.repository_owner }}/streammaster
+      IMAGE_OWNER: hhankj2u
+      BASE_PACKAGE_NAME: streammaster-builds
+      FINAL_PACKAGE_NAME: streammaster
     steps:
       - name: Delete PR Images
         run: |
-          # Delete all related images
+          # Delete all related images from ghcr.io/hhankj2u
           for suffix in "" "-base" "-build" "-sm"; do
             IMAGE_VERSION="${PR_VERSION}${suffix}"
 
-            # Delete from streammaster-builds repository
-            gh api --method DELETE "/user/packages/container/${BASE_IMAGE_NAME}/versions/${IMAGE_VERSION}" || true
+            # Delete from streammaster-builds package
+            gh api --method DELETE "/users/${IMAGE_OWNER}/packages/container/${BASE_PACKAGE_NAME}/versions/${IMAGE_VERSION}" || true
 
-            # Delete from main streammaster repository
+            # Delete from main streammaster package
             if [ -z "$suffix" ]; then
-              gh api --method DELETE "/user/packages/container/${FINAL_IMAGE_NAME}/versions/${IMAGE_VERSION}" || true
+              gh api --method DELETE "/users/${IMAGE_OWNER}/packages/container/${FINAL_PACKAGE_NAME}/versions/${IMAGE_VERSION}" || true
             fi
           done
         env:

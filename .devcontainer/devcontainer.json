@@ -3,6 +3,7 @@
 	"dockerComposeFile": "development-docker-compose.yml",
 	"service": "streammaster-app",
 	"workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+	"remoteUser": "vscode",
 	"features": {
 		"ghcr.io/devcontainers/features/node:1": {
 			"version": "lts"
