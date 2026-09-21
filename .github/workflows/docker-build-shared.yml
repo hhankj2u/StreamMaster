@@ -180,7 +180,7 @@ jobs:
         uses: docker/setup-buildx-action@v4
 
       - name: Run Tests
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.tests
@@ -218,7 +218,7 @@ jobs:
           password: ${{ secrets.token }}
 
       - name: Base - Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.base
@@ -263,7 +263,7 @@ jobs:
           password: ${{ secrets.token }}
 
       - name: Build SDK - Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.build
@@ -318,7 +318,7 @@ jobs:
           cat Dockerfile.sm.template >> Dockerfile.sm
 
       - name: SM - Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.sm
@@ -386,7 +386,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Final - Build and Push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
